@@ -58,9 +58,9 @@ namespace SpeedControl
 
         public static void AddRepositories(IServiceCollection serviceCollection, string filePath)
         {
-            var cashe = serviceCollection.AddMemoryCache();
+            //var cashe = serviceCollection.AddMemoryCache();
             serviceCollection.AddSingleton<IVehicleRecordRepository>(sp =>
-                new VehicleRecordRepository(filePath, sp.GetRequiredService<IMemoryCache>()));
+                new VehicleRecordRepository(filePath));
         }
     }
 }

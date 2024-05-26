@@ -8,13 +8,10 @@ namespace SpeedControl.Data.Implementation
 {
     public class VehicleRecordRepository : IVehicleRecordRepository
     {
-        private readonly IMemoryCache _cache;
         private readonly string _filePath;
-        private const string CacheKey = "VehicleRecordsCache";
 
-        public VehicleRecordRepository(string filePath, IMemoryCache cache)
+        public VehicleRecordRepository(string filePath)
         {
-            _cache = cache;
             _filePath = filePath;
 
             if (!File.Exists(_filePath))
@@ -29,32 +26,38 @@ namespace SpeedControl.Data.Implementation
             var records = await GetAllAsync() ?? new List<VehicleRecord>();
             var recordsList = new List<VehicleRecord>(records) { vehicleRecord };
 
-            var json = JsonConvert.SerializeObject(recordsList);
-            await File.WriteAllTextAsync(_filePath, json);
-
-            _cache.Set(CacheKey, json);
+            await WriteRecordsToFileAsync(recordsList);
         }
 
         public async Task<IEnumerable<VehicleRecord>> GetAllAsync()
         {
-            if (!_cache.TryGetValue(CacheKey, out List<VehicleRecord> vehicleRecords))
+            List<VehicleRecord>? vehicleRecords;
+
+            if (File.Exists(_filePath))
             {
-                if (File.Exists(_filePath))
-                {
-                    var json = await File.ReadAllTextAsync(_filePath);
-                    vehicleRecords = JsonConvert.DeserializeObject<List<VehicleRecord>>(json) ?? new List<VehicleRecord>();
-                }
-                else
-                {
-                    throw new FileNotFoundException();
-                }
+                using var streamReader = new StreamReader(_filePath);
+                using var jsonReader = new JsonTextReader(streamReader);
 
-                var cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(40));
+                var serializer = new JsonSerializer();
+                vehicleRecords = serializer.Deserialize<List<VehicleRecord>>(jsonReader);
 
-                _cache.Set(CacheKey, vehicleRecords, cacheOptions);
+            }
+            else
+            {
+                throw new FileNotFoundException();
             }
 
             return vehicleRecords;
+        }
+
+        private async Task WriteRecordsToFileAsync(List<VehicleRecord> records)
+        {
+            using var streamWriter = new StreamWriter(_filePath);
+            using var jsonWriter = new JsonTextWriter(streamWriter);
+
+            var serializer = new JsonSerializer();
+            serializer.Serialize(jsonWriter, records);
+            await jsonWriter.FlushAsync();
         }
     }
 }
