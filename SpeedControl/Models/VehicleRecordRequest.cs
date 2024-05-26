@@ -1,10 +1,7 @@
-﻿using System.Text.Json.Serialization;
-
-namespace SpeedControl.Models
+﻿namespace SpeedControl.Models
 {
-    public class VehicleRecord
+    public class VehicleRecordRequest
     {
-        public Guid Id { get; set; }
         public string Number { get; set; }
         public DateTime Timestamp { get; set; }
         public float Speed { get; set; }

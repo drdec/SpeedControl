@@ -16,6 +16,12 @@ namespace SpeedControl.Data.Implementation
         {
             _cache = cache;
             _filePath = filePath;
+
+            if (!File.Exists(_filePath))
+            {
+                File.Create(_filePath).Dispose();
+                File.WriteAllText(_filePath, "[]");
+            }
         }
 
         public async Task AddAsync(VehicleRecord vehicleRecord)
